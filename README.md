@@ -2,6 +2,9 @@
 
 A standalone Python application that captures system audio or microphone input, transcribes conversations in real-time using OpenAI Whisper, and analyzes transcripts using Claude API.
 
+![CallScribe Web Interface](docs/images/callscribe-web-ui.png)
+*Modern web interface with streaming mode, video conference support, and real-time Claude analysis*
+
 ## Features
 
 ### Core Features
