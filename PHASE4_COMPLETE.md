@@ -111,9 +111,9 @@ python -m callscribe gui --no-browser
 ```
 
 **Access:**
-- Desktop: `http://localhost:5000`
+- Desktop: `http://localhost:3000`
 - Mobile: Scan QR code or visit network URL
-- Network: `http://YOUR_LOCAL_IP:5000`
+- Network: `http://YOUR_LOCAL_IP:3000`
 
 **Documentation:** [WEB_GUI_GUIDE.md](WEB_GUI_GUIDE.md)
 
@@ -209,7 +209,7 @@ python -m callscribe.main \
 ```
 Desktop (MacBook):
 1. Launch: python -m callscribe gui
-2. Server starts: http://192.168.1.100:5000
+2. Server starts: http://192.168.1.100:3000
 3. QR code displayed
 
 Mobile (iPhone/Android):

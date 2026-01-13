@@ -28,8 +28,8 @@ def main():
     parser.add_argument(
         "--port",
         type=int,
-        default=5000,
-        help="Port to run on (default: 5000)"
+        default=3000,
+        help="Port to run on (default: 3000)"
     )
 
     parser.add_argument(

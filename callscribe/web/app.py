@@ -162,7 +162,7 @@ def list_devices():
 def get_qrcode():
     """Generate QR code for mobile access."""
     local_ip = get_local_ip()
-    port = request.host.split(':')[-1] if ':' in request.host else '5000'
+    port = request.host.split(':')[-1] if ':' in request.host else '3000'
     url = f"http://{local_ip}:{port}"
     qr_image = generate_qr_code(url)
     return jsonify({'qr_code': qr_image, 'url': url})
@@ -877,7 +877,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-def run_server(host='0.0.0.0', port=5000, debug=False):
+def run_server(host='0.0.0.0', port=3000, debug=False):
     """Run the Flask-SocketIO server."""
     # Register signal handler for Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)

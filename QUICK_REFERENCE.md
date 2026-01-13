@@ -6,7 +6,7 @@
 ```bash
 python -m callscribe gui
 ```
-Opens browser to http://localhost:5000
+Opens browser to http://localhost:3000
 
 ### CLI - Standard Recording
 ```bash
