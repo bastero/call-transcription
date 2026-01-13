@@ -20,7 +20,6 @@ A standalone Python application that captures system audio or microphone input, 
 - **Video Conferencing Support**: Dual-stream recording for Zoom, Meet, Teams, and more
 - **Automatic App Detection**: Detects video apps and shows setup instructions
 - **Dual-Stream Recording**: Captures both your voice and remote participants simultaneously
-- **Speaker Diarization**: Free pause-based speaker detection
 - **Streaming Transcription**: Real-time transcription every 5 seconds
 - **Pausable Recording**: Interactive pause/resume controls
 - **Web GUI**: Modern Apple-inspired browser interface with mobile support
@@ -164,9 +163,6 @@ python -m callscribe.main --pausable
 
 # Video conference with analysis
 python -m callscribe.main --video-conference --full-report
-
-# With speaker diarization
-python -m callscribe.main --diarize --num-speakers 2
 
 # List available audio devices
 python -m callscribe.main --list-devices
@@ -372,7 +368,6 @@ Complete guides for all features:
 - **[WEB_GUI_GUIDE.md](WEB_GUI_GUIDE.md)** - Web interface and mobile access
 - **[STREAMING_GUIDE.md](STREAMING_GUIDE.md)** - Real-time streaming transcription
 - **[PAUSABLE_GUIDE.md](PAUSABLE_GUIDE.md)** - Pausable recording mode
-- **[SPEAKER_DIARIZATION_GUIDE.md](SPEAKER_DIARIZATION_GUIDE.md)** - Speaker detection
 - **[QUICKSTART.md](QUICKSTART.md)** - Quick setup guide
 - **[SETUP.md](SETUP.md)** - Detailed setup instructions
 - **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Command reference
@@ -384,7 +379,6 @@ Complete guides for all features:
 - ✅ Audio capture (microphone + system audio)
 - ✅ Local Whisper transcription
 - ✅ Claude AI analysis
-- ✅ Free speaker diarization
 - ✅ Real-time streaming transcription
 - ✅ Pause/resume functionality
 
