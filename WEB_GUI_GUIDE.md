@@ -4,9 +4,6 @@
 
 CallScribe's Web GUI provides a modern, Apple-inspired browser interface for AI-powered transcription. Access it from your desktop browser or mobile device, with real-time updates, cross-device control, and automatic network detection.
 
-![CallScribe Web Interface](docs/images/callscribe-web-ui.png)
-*Complete web interface showing all features: recording modes, options panel, live transcript, activity log, and mobile QR code*
-
 ## Quick Start
 
 ### Launch Web Interface
