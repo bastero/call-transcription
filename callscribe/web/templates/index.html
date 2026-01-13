@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CallScribe</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #007AFF;
+            --secondary: #5856D6;
+            --success: #34C759;
+            --danger: #FF3B30;
+            --warning: #FF9500;
+            --bg-primary: #F2F2F7;
+            --bg-secondary: #FFFFFF;
+            --text-primary: #000000;
+            --text-secondary: #8E8E93;
+            --border: #C6C6C8;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background:
+                linear-gradient(135deg, rgba(0, 122, 255, 0.65), rgba(88, 86, 214, 0.65)),
+                url('https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&h=400&fit=crop&auto=format&q=80');
+            background-size: cover;
+            background-position: center;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(0, 122, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.2) 0%, transparent 15%),
+                radial-gradient(circle at 35% 40%, rgba(255, 255, 255, 0.18) 0%, transparent 13%),
+                radial-gradient(circle at 55% 55%, rgba(255, 255, 255, 0.15) 0%, transparent 14%),
+                radial-gradient(circle at 75% 45%, rgba(255, 255, 255, 0.17) 0%, transparent 12%),
+                radial-gradient(circle at 90% 50%, rgba(255, 255, 255, 0.16) 0%, transparent 13%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-family: 'Futura', 'Century Gothic', 'Avant Garde', -apple-system, sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            color: white;
+            text-shadow:
+                0 2px 15px rgba(0, 0, 0, 0.4),
+                0 4px 30px rgba(0, 122, 255, 0.5),
+                2px 2px 0 rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 2;
+        }
+
+        .header p {
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.98);
+            text-shadow:
+                0 1px 8px rgba(0, 0, 0, 0.3),
+                0 2px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Main Card */
+        .card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 12px var(--shadow);
+            margin-bottom: 12px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .status-bar.recording {
+            background: linear-gradient(135deg, #FF3B30, #FF6B6B);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.9; }
+        }
+
+        .status-info {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-label {
+            font-size: 10px;
+            opacity: 0.8;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-value {
+            font-size: 16px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Mode Selector */
+        .mode-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .mode-btn {
+            padding: 10px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--primary);
+            background: rgba(0, 122, 255, 0.05);
+        }
+
+        .mode-btn.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .mode-btn .icon {
+            font-size: 22px;
+            margin-bottom: 3px;
+        }
+
+        .mode-btn .label {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Options */
+        .options-section {
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+        }
+
+        .option-item {
+            padding: 10px 12px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-item label {
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Toggle Switch */
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 26px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background-color: var(--success);
+        }
+
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(16px);
+        }
+
+        /* Select */
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            font-size: 13px;
+            font-family: inherit;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Control Buttons */
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #0051D5;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #D72F2F;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #E5E5EA;
+        }
+
+        /* Transcript */
+        .transcript-section {
+            margin-top: 16px;
+        }
+
+        .transcript-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .transcript-content {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .transcript-content:empty::before {
+            content: 'Transcript will appear here...';
+            color: var(--text-secondary);
+        }
+
+        .transcript-chunk {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .transcript-chunk:last-child {
+            border-bottom: none;
+        }
+
+        .chunk-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+            font-weight: 500;
+        }
+
+        /* Analysis Display */
+        .analysis-content {
+            white-space: pre-wrap;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .analysis-content h1,
+        .analysis-content h2,
+        .analysis-content h3 {
+            margin-top: 16px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .analysis-content h1 {
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        .analysis-content h2 {
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .analysis-content h3 {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .analysis-content ul,
+        .analysis-content ol {
+            margin-left: 20px;
+            margin-bottom: 8px;
+        }
+
+        .analysis-content li {
+            margin-bottom: 4px;
+        }
+
+        .analysis-content p {
+            margin-bottom: 8px;
+        }
+
+        .analysis-content strong {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Log Panel */
+        .log-panel {
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 12px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            font-size: 12px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+        }
+
+        .log-entry {
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+        }
+
+        /* QR Code */
+        .qr-section {
+            text-align: center;
+            padding: 16px;
+        }
+
+        .qr-section img {
+            max-width: 160px;
+            border-radius: 10px;
+        }
+
+        .qr-url {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .container {
+                padding: 8px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .mode-selector {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .status-info {
+                gap: 12px;
+            }
+
+            .status-value {
+                font-size: 18px;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>CallScribe</h1>
+            <p>AI-Powered Call Transcription</p>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar" id="status-panel">
+            <div class="status-info">
+                <div class="status-item">
+                    <span class="status-label">Status</span>
+                    <span class="status-value" id="status-text">Ready</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Duration</span>
+                    <span class="status-value" id="status-duration">0:00</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Mode</span>
+                    <span class="status-value" id="status-mode">Standard</span>
+                </div>
+            </div>
+            <!-- Video Conference Notification -->
+            <div id="video-info" style="display: none; padding: 10px 16px; background: linear-gradient(135deg, rgba(0, 122, 255, 0.25), rgba(88, 86, 214, 0.25)); border: 2px solid rgba(0, 122, 255, 0.6); border-radius: 10px; margin-left: 16px; box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">📹 <span id="video-apps-list"></span></div>
+                    <button id="video-info-close" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; font-weight: bold;">×</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="card">
+            <!-- Mode Selector -->
+            <div class="section-title">Recording Mode</div>
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="standard">
+                    <div class="icon">🎙️</div>
+                    <div class="label">Standard</div>
+                </button>
+                <button class="mode-btn" data-mode="streaming">
+                    <div class="icon">📡</div>
+                    <div class="label">Streaming</div>
+                </button>
+                <button class="mode-btn" data-mode="pausable">
+                    <div class="icon">⏸️</div>
+                    <div class="label">Pausable</div>
+                </button>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button class="btn btn-primary" id="btn-start">
+                    <span>▶️</span> Start
+                </button>
+                <button class="btn btn-secondary" id="btn-pause" disabled>
+                    <span>⏸️</span> Pause
+                </button>
+                <button class="btn btn-danger" id="btn-stop" disabled>
+                    <span>⏹️</span> Stop
+                </button>
+            </div>
+
+            <!-- Options -->
+            <details open>
+                <summary class="section-title" style="cursor: pointer; user-select: none;">Options</summary>
+                <div class="options-grid" style="margin-top: 16px;">
+                    <div class="option-item">
+                        <label for="opt-diarize">Speaker Detection</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="opt-diarize">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="option-item">
+                        <label for="opt-timestamps">Timestamps</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="opt-timestamps" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="option-item">
+                        <label for="opt-full-report">Full Report</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="opt-full-report">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="option-item">
+                        <label for="opt-save-audio">Save Audio</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="opt-save-audio">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="option-item">
+                        <label for="opt-video-mode">Video Conference Mode</label>
+                        <label class="toggle">
+                            <input type="checkbox" id="opt-video-mode">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="options-grid" style="margin-top: 12px;">
+                    <div class="option-item" style="flex-direction: column; align-items: stretch;">
+                        <label style="margin-bottom: 8px;">Speakers</label>
+                        <select id="opt-speakers">
+                            <option value="2">2 Speakers</option>
+                            <option value="3">3 Speakers</option>
+                            <option value="4">4 Speakers</option>
+                            <option value="5">5 Speakers</option>
+                        </select>
+                    </div>
+                    <div class="option-item" style="flex-direction: column; align-items: stretch;">
+                        <label style="margin-bottom: 8px;">Model</label>
+                        <select id="opt-model">
+                            <option value="tiny">Tiny</option>
+                            <option value="base" selected>Base</option>
+                            <option value="small">Small</option>
+                            <option value="medium">Medium</option>
+                            <option value="large">Large</option>
+                        </select>
+                    </div>
+                    <div class="option-item" style="flex-direction: column; align-items: stretch;">
+                        <label style="margin-bottom: 8px;">Language</label>
+                        <select id="opt-language">
+                            <option value="">Auto-detect</option>
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="zh">Chinese</option>
+                            <option value="ja">Japanese</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Transcript / Analysis -->
+        <div class="card">
+            <div class="transcript-header">
+                <div class="section-title" id="transcript-title">Live Transcript</div>
+            </div>
+            <div class="transcript-content" id="transcript-content"></div>
+        </div>
+
+        <!-- Log Panel -->
+        <div class="card">
+            <div class="section-title">Activity Log</div>
+            <div class="log-panel" id="log-panel"></div>
+        </div>
+
+        <!-- QR Code -->
+        <div class="card qr-section" id="qr-section" style="display: none;">
+            <div class="section-title">Mobile Access</div>
+            <img id="qr-image" alt="QR Code">
+            <div class="qr-url" id="mobile-url"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+
+        // Elements
+        const statusPanel = document.getElementById('status-panel');
+        const statusText = document.getElementById('status-text');
+        const statusDuration = document.getElementById('status-duration');
+        const statusMode = document.getElementById('status-mode');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const btnStart = document.getElementById('btn-start');
+        const btnPause = document.getElementById('btn-pause');
+        const btnStop = document.getElementById('btn-stop');
+        const transcriptContent = document.getElementById('transcript-content');
+        const logPanel = document.getElementById('log-panel');
+        const qrSection = document.getElementById('qr-section');
+        const qrImage = document.getElementById('qr-image');
+        const mobileUrl = document.getElementById('mobile-url');
+
+        let currentMode = 'standard';
+        let isRecording = false;
+        let isPaused = false;
+        let startTime = null;
+        let durationInterval = null;
+
+        // Mode selection
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (isRecording) return;
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                statusMode.textContent = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
+
+                socket.emit('ui_change', {
+                    type: 'mode',
+                    value: currentMode
+                });
+            });
+        });
+
+        // Start recording
+        btnStart.addEventListener('click', () => {
+            const options = {
+                mode: currentMode,
+                options: {
+                    diarize: document.getElementById('opt-diarize').checked,
+                    num_speakers: parseInt(document.getElementById('opt-speakers').value),
+                    timestamps: document.getElementById('opt-timestamps').checked,
+                    full_report: document.getElementById('opt-full-report').checked,
+                    save_audio: document.getElementById('opt-save-audio').checked,
+                    video_conference_mode: document.getElementById('opt-video-mode').checked,
+                    model: document.getElementById('opt-model').value,
+                    language: document.getElementById('opt-language').value || null
+                }
+            };
+
+            socket.emit('start_recording', options);
+        });
+
+        // Pause recording
+        btnPause.addEventListener('click', () => {
+            if (isPaused) {
+                socket.emit('resume_recording');
+            } else {
+                socket.emit('pause_recording');
+            }
+        });
+
+        // Stop recording
+        btnStop.addEventListener('click', () => {
+            socket.emit('stop_recording');
+        });
+
+        // Option change handlers
+        document.getElementById('opt-full-report').addEventListener('change', (e) => {
+            if (isRecording) {
+                socket.emit('update_options', {
+                    options: { full_report: e.target.checked }
+                });
+            } else {
+                socket.emit('ui_change', {
+                    type: 'option',
+                    id: 'opt-full-report',
+                    value: e.target.checked
+                });
+            }
+        });
+
+        document.getElementById('opt-save-audio').addEventListener('change', (e) => {
+            if (isRecording) {
+                socket.emit('update_options', {
+                    options: { save_audio: e.target.checked }
+                });
+            } else {
+                socket.emit('ui_change', {
+                    type: 'option',
+                    id: 'opt-save-audio',
+                    value: e.target.checked
+                });
+            }
+        });
+
+        ['opt-diarize', 'opt-timestamps', 'opt-speakers', 'opt-model', 'opt-language'].forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => {
+                if (!isRecording) {
+                    socket.emit('ui_change', {
+                        type: 'option',
+                        id: id,
+                        value: e.target.type === 'checkbox' ? e.target.checked : e.target.value
+                    });
+                }
+            });
+        });
+
+        document.getElementById('opt-speakers').addEventListener('change', (e) => {
+            if (isRecording) {
+                socket.emit('update_options', {
+                    options: { num_speakers: parseInt(e.target.value) }
+                });
+            }
+        });
+
+        // Socket handlers
+        socket.on('connect', () => {
+            addLog('Connected to server');
+            loadQRCode();
+            detectVideoApps();
+        });
+
+        socket.on('status', (data) => {
+            updateStatus(data);
+        });
+
+        socket.on('recording_started', (data) => {
+            isRecording = true;
+            btnStart.disabled = true;
+            btnStop.disabled = false;
+            if (data.mode === 'pausable') {
+                btnPause.disabled = false;
+            }
+            statusPanel.classList.add('recording');
+            transcriptContent.innerHTML = '';
+
+            // Reset transcript title
+            const transcriptTitle = document.getElementById('transcript-title');
+            transcriptTitle.textContent = 'Live Transcript';
+
+            startTime = Date.now();
+            statusDuration.textContent = '0:00';
+
+            if (data.mode !== 'pausable') {
+                startDurationTimer();
+            }
+        });
+
+        socket.on('transcript_chunk', (data) => {
+            addTranscriptChunk(data);
+        });
+
+        socket.on('log', (data) => {
+            addLog(data.message);
+        });
+
+        socket.on('error', (data) => {
+            addLog('ERROR: ' + data.message);
+        });
+
+        socket.on('recording_complete', (data) => {
+            isRecording = false;
+            isPaused = false;
+            btnStart.disabled = false;
+            btnPause.disabled = true;
+            btnStop.disabled = true;
+            statusPanel.classList.remove('recording');
+            stopDurationTimer();
+            statusDuration.textContent = '0:00';
+            addLog('Recording complete!');
+            if (data.files) {
+                addLog('Files saved: ' + Object.values(data.files).join(', '));
+            }
+
+            // Display analysis if available
+            if (data.analysis_content) {
+                displayAnalysis(data.analysis_content);
+            }
+        });
+
+        socket.on('options_updated', (data) => {
+            if (data.options.full_report !== undefined) {
+                document.getElementById('opt-full-report').checked = data.options.full_report;
+            }
+            if (data.options.save_audio !== undefined) {
+                document.getElementById('opt-save-audio').checked = data.options.save_audio;
+            }
+            if (data.options.num_speakers !== undefined) {
+                document.getElementById('opt-speakers').value = data.options.num_speakers;
+            }
+        });
+
+        socket.on('ui_sync', (data) => {
+            if (data.type === 'mode') {
+                modeBtns.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.mode === data.value) {
+                        btn.classList.add('active');
+                    }
+                });
+                currentMode = data.value;
+                statusMode.textContent = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
+            } else if (data.type === 'option') {
+                const element = document.getElementById(data.id);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = data.value;
+                    } else {
+                        element.value = data.value;
+                    }
+                }
+            }
+        });
+
+        // Helper functions
+        function updateStatus(data) {
+            statusText.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+
+            if (data.mode && data.mode !== currentMode) {
+                currentMode = data.mode;
+                statusMode.textContent = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
+                modeBtns.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.mode === currentMode) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            if (data.mode === 'pausable' && data.duration !== undefined) {
+                const duration = Math.floor(data.duration);
+                const minutes = Math.floor(duration / 60);
+                const seconds = duration % 60;
+                statusDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            if (data.status === 'recording' || data.status === 'paused' || data.status === 'stopping') {
+                isRecording = true;
+                btnStart.disabled = true;
+                btnStop.disabled = false;
+
+                if (data.mode === 'pausable') {
+                    btnPause.disabled = false;
+                } else {
+                    btnPause.disabled = true;
+                }
+
+                statusPanel.classList.add('recording');
+
+                if (data.status === 'paused') {
+                    isPaused = true;
+                    btnPause.innerHTML = '<span>▶️</span> Resume';
+                } else {
+                    isPaused = false;
+                    btnPause.innerHTML = '<span>⏸️</span> Pause';
+                }
+            } else if (data.status === 'idle') {
+                isRecording = false;
+                isPaused = false;
+                btnStart.disabled = false;
+                btnStop.disabled = true;
+                btnPause.disabled = true;
+                statusPanel.classList.remove('recording');
+            }
+        }
+
+        function addTranscriptChunk(data) {
+            const chunkDiv = document.createElement('div');
+            chunkDiv.className = 'transcript-chunk';
+
+            if (data.chunk) {
+                const label = document.createElement('div');
+                label.className = 'chunk-label';
+                label.textContent = `Chunk ${data.chunk}`;
+                chunkDiv.appendChild(label);
+            }
+
+            const text = document.createElement('div');
+            text.textContent = data.text;
+            chunkDiv.appendChild(text);
+
+            if (transcriptContent.querySelector('p')) {
+                transcriptContent.innerHTML = '';
+            }
+
+            transcriptContent.appendChild(chunkDiv);
+            transcriptContent.scrollTop = transcriptContent.scrollHeight;
+        }
+
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logPanel.appendChild(logEntry);
+            logPanel.scrollTop = logPanel.scrollHeight;
+        }
+
+        function displayAnalysis(analysisText) {
+            // Update title
+            const transcriptTitle = document.getElementById('transcript-title');
+            transcriptTitle.textContent = 'Analysis';
+
+            // Clear transcript content
+            transcriptContent.innerHTML = '';
+
+            // Create analysis container
+            const analysisDiv = document.createElement('div');
+            analysisDiv.className = 'analysis-content';
+
+            // Parse and format the analysis text
+            // Convert markdown-style formatting to HTML
+            const formattedHtml = formatAnalysisToHtml(analysisText);
+            analysisDiv.innerHTML = formattedHtml;
+
+            transcriptContent.appendChild(analysisDiv);
+            transcriptContent.scrollTop = 0; // Scroll to top
+        }
+
+        function formatAnalysisToHtml(text) {
+            // Convert markdown-style text to HTML
+            let html = text;
+
+            // Headers (##, ###)
+            html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+            html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+            // Bold text (**text**)
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // Bullet lists
+            html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+
+            // Numbered lists
+            html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+            // Paragraphs (double newlines)
+            html = html.split('\n\n').map(para => {
+                if (!para.trim().startsWith('<') && para.trim().length > 0) {
+                    return '<p>' + para + '</p>';
+                }
+                return para;
+            }).join('\n\n');
+
+            return html;
+        }
+
+        function startDurationTimer() {
+            durationInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                statusDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopDurationTimer() {
+            if (durationInterval) {
+                clearInterval(durationInterval);
+                durationInterval = null;
+            }
+        }
+
+        function loadQRCode() {
+            fetch('/api/qrcode')
+                .then(response => response.json())
+                .then(data => {
+                    qrImage.src = data.qr_code;
+                    mobileUrl.textContent = data.url;
+                    qrSection.style.display = 'block';
+                });
+        }
+
+        function detectVideoApps() {
+            fetch('/api/video-apps')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        const videoInfo = document.getElementById('video-info');
+                        const appsList = document.getElementById('video-apps-list');
+                        appsList.textContent = data.detected.map(app => app.name).join(', ') + ' detected';
+                        videoInfo.style.display = 'flex';
+                    }
+                })
+                .catch(err => {
+                    console.log('Could not detect video apps:', err);
+                });
+        }
+
+        // Close video info banner
+        document.getElementById('video-info-close').addEventListener('click', () => {
+            document.getElementById('video-info').style.display = 'none';
+        });
+
+        // Initial load
+        addLog('System ready. Click Start to begin.');
+    </script>
+</body>
+</html>
